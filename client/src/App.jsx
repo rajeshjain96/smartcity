@@ -17,8 +17,10 @@ import AdminDustbins from "./components/AdminDustbins";
 import AdminAreas from "./components/AdminAreas";
 import AdminDrivers from "./components/AdminDrivers";
 import AdminPickupRequests from "./components/AdminPickupRequests";
+import AdminMapView from "./components/AdminMapView";
 import ResidentPickupRequests from "./components/ResidentPickupRequests";
 import DriverPickupRequests from "./components/DriverPickupRequests";
+import DriverMapView from "./components/DriverMapView";
 
 function App() {
   axios.defaults.withCredentials = true; // ⬅️ Important!
@@ -46,6 +48,7 @@ function App() {
               <Route path="dustbins" element={<AdminDustbins />} />
               <Route path="pickup-requests" element={<AdminPickupRequests />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="map" element={<AdminMapView />} />
             </Route>
             
             {/* Legacy routes - redirect to /admin/* namespace */}
@@ -102,6 +105,7 @@ function App() {
               <Route index element={<Navigate to="/driver/dashboard" replace />} />
               <Route path="dashboard" element={<DriverDashboard />} />
               <Route path="pickups" element={<DriverPickupRequests />} />
+              <Route path="map" element={<DriverMapView />} />
             </Route>
             
             {/* Legacy route - redirect to nested route */}

@@ -136,6 +136,15 @@ export default function AdminLayout() {
               Dashboard
             </Link>
             
+            {/* Map View Link */}
+            <Link 
+              to="/admin/map" 
+              className={`nav-link text-white ${isActive("/admin/map") ? "bg-secondary bg-opacity-50 rounded" : ""}`}
+            >
+              <i className="bi bi-geo-alt me-2"></i>
+              Map View
+            </Link>
+            
             <hr className="text-white-50 my-2" />
             
             {/* Menu Sections */}

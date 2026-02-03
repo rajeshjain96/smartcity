@@ -87,6 +87,13 @@ export default function DriverLayout() {
               <i className="bi bi-clipboard-check me-2"></i>
               My Pickups
             </Link>
+            <Link 
+              to="/driver/map" 
+              className={`nav-link text-white ${isActive("/driver/map") ? "bg-secondary bg-opacity-50 rounded" : ""}`}
+            >
+              <i className="bi bi-geo-alt me-2"></i>
+              Map View
+            </Link>
             <hr className="text-white-50" />
             <button 
               className="nav-link text-white btn btn-link text-start"
