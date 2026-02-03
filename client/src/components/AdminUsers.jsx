@@ -16,7 +16,8 @@ import { getEmptyObject, getShowInList } from "../utils/commonUtil";
 
 export default function AdminUsers(props) {
   const navigate = useNavigate();
-  const selectedEntity = {
+  // Use selectedEntity from props if available, otherwise use default
+  const selectedEntity = props.selectedEntity || {
     name: "Users",
     singularName: "User",
     dbCollection: "users",

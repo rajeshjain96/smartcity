@@ -6,9 +6,9 @@ import NavigationBar from "./NavigationBar";
 import axios from "axios";
 import LoadingSpinner from "./LoadingSpinner";
 import AdminManageMenus from "./AdminManageMenus";
+import AdminOperationsMenus from "./AdminOperationsMenus";
 import AdminSettingMenus from "./AdminSettingMenus";
 import AdminReportMenus from "./AdminReportMenus";
-import AdminCalculatorMenus from "./AdminCalculatorMenus";
 export default function AdminMainPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,9 +22,9 @@ export default function AdminMainPage() {
   let [menuStateRestored, setMenuStateRestored] = useState(false);
   let adminMenus = [];
   adminMenus.push(AdminManageMenus);
-  adminMenus.push(AdminSettingMenus);
+  adminMenus.push(AdminOperationsMenus);
   adminMenus.push(AdminReportMenus);
-  adminMenus.push(AdminCalculatorMenus);
+  adminMenus.push(AdminSettingMenus);
   useEffect(() => {
     checkSessionExists();
 
@@ -114,8 +114,11 @@ export default function AdminMainPage() {
         // Valid logged in user - redirect based on role
         setUser(response);
         
-        // If user is not admin, redirect to their dashboard
-        if (response.role === "resident") {
+        // Redirect all logged-in users to their respective dashboards
+        if (response.role === "admin") {
+          navigate("/admin/dashboard");
+          return;
+        } else if (response.role === "resident") {
           navigate("/resident/dashboard");
           return;
         } else if (response.role === "driver") {
@@ -123,31 +126,9 @@ export default function AdminMainPage() {
           return;
         }
         
-        // Admin continues to AdminMainPage
+        // Fallback: show home view (shouldn't reach here)
         setView("home");
-
-        // Only reset menu index if we haven't restored state from navigation or sessionStorage
-        if (!menuStateRestored) {
-          // Try to restore from sessionStorage
-          const savedMenuIndex = sessionStorage.getItem('selectedMenuIndex');
-          if (savedMenuIndex !== null) {
-            const menuIndex = parseInt(savedMenuIndex, 10);
-            // Only restore if it's Manage (0) or Settings (1) menu
-            if (menuIndex === 0 || menuIndex === 1) {
-              console.log('Restoring menu state from sessionStorage:', menuIndex);
-              setSelectedMenuIndex(menuIndex);
-            } else {
-              console.log('Menu state not restored, resetting selectedMenuIndex to -1');
-              setSelectedMenuIndex(-1);
-            }
-          } else {
-            console.log('Menu state not restored, resetting selectedMenuIndex to -1');
-            setSelectedMenuIndex(-1);
-          }
-        } else {
-          console.log('Menu state already restored, preserving current state');
-        }
-
+        setSelectedMenuIndex(-1);
         setSelectedEntityIndex(-1);
         setSelectedEntity("");
       }
@@ -169,13 +150,19 @@ export default function AdminMainPage() {
     const entityName = entity.name.toLowerCase();
 
     // Check if this is a Manage menu item that should use routing
-    if (selectedMenuIndex === 0 && ["customers", "enquiries", "measurements", "quotations"].includes(entityName)) {
+    if (selectedMenuIndex === 0 && ["areas", "drivers", "dustbins"].includes(entityName)) {
       navigate(`/${entityName}`, { state: { selectedMenuIndex } });
       return;
     }
 
+    // Check if this is an Operations menu item that should use routing
+    if (selectedMenuIndex === 1 && ["pickup requests"].includes(entityName)) {
+      navigate(`/pickup-requests`, { state: { selectedMenuIndex } });
+      return;
+    }
+
     // Check if this is a Settings menu item that should use routing
-    if (selectedMenuIndex === 1 && ["users", "rates", "companies", "catalogs", "shopdetails"].includes(entityName)) {
+    if (selectedMenuIndex === 3 && ["users"].includes(entityName)) {
       navigate(`/${entityName}`, { state: { selectedMenuIndex } });
       return;
     }
@@ -248,22 +235,8 @@ export default function AdminMainPage() {
     // Redirect based on role
     if (loggedinUser && loggedinUser.role) {
       if (loggedinUser.role === "admin") {
-        setView("home");
-        // Restore selectedMenuIndex from sessionStorage after login
-        const savedMenuIndex = sessionStorage.getItem('selectedMenuIndex');
-        if (savedMenuIndex !== null) {
-          const menuIndex = parseInt(savedMenuIndex, 10);
-          // Only restore if it's Manage (0) or Settings (1) menu
-          if (menuIndex === 0 || menuIndex === 1) {
-            setSelectedMenuIndex(menuIndex);
-          } else {
-            setSelectedMenuIndex(-1);
-          }
-        } else {
-          setSelectedMenuIndex(-1);
-        }
-        setSelectedEntityIndex(-1);
-        setSelectedEntity("");
+        // Redirect admin to dashboard (uses AdminLayout)
+        navigate("/admin/dashboard");
       } else if (loggedinUser.role === "resident") {
         // Redirect resident to their dashboard
         navigate("/resident/dashboard");
@@ -311,8 +284,8 @@ export default function AdminMainPage() {
   }
   
   function navigateToEntity(entityName, filterParams = null) {
-    // Block staff users from accessing Users or ShopDetails
-    if (user && user.role === "staff" && (entityName === "Users" || entityName === "ShopDetails")) {
+  // Block staff users from accessing Users (if needed in future)
+  if (user && user.role === "staff" && entityName === "Users") {
       setMessage("You don't have permission to access this section.");
       return;
     }
@@ -324,10 +297,11 @@ export default function AdminMainPage() {
           setSelectedMenuIndex(menuIndex);
           setSelectedEntityIndex(entityIndex);
           
-          // For enquiries, measurements, and quotations, use route navigation to pass filterParams
+          // For entities that use route navigation
           const entityNameLower = entityName.toLowerCase();
-          if (["enquiries", "measurements", "quotations", "customers"].includes(entityNameLower)) {
-            navigate(`/${entityNameLower}`, { 
+          if (["areas", "drivers", "dustbins", "pickup requests", "users"].includes(entityNameLower)) {
+            const routePath = entityNameLower === "pickup requests" ? "/pickup-requests" : `/${entityNameLower}`;
+            navigate(routePath, { 
               state: { 
                 selectedMenuIndex,
                 filterParams: filterParams || null
@@ -445,9 +419,9 @@ export default function AdminMainPage() {
                     >
                       <div className="homepage-menu-icon">
                         {menuIndex === 0 && <i className="bi bi-gear-fill"></i>}
-                        {menuIndex === 1 && <i className="bi bi-sliders"></i>}
+                        {menuIndex === 1 && <i className="bi bi-clipboard-check"></i>}
                         {menuIndex === 2 && <i className="bi bi-graph-up-arrow"></i>}
-                        {menuIndex === 3 && <i className="bi bi-calculator"></i>}
+                        {menuIndex === 3 && <i className="bi bi-sliders"></i>}
                       </div>
                       <span className="homepage-menu-text">{menu.name}</span>
                       <i className={`bi ${selectedMenuIndex === menuIndex ? 'bi-chevron-up' : 'bi-chevron-down'} homepage-menu-arrow`}></i>
@@ -456,9 +430,9 @@ export default function AdminMainPage() {
                       <div className="homepage-submenu">
                         {menu.entities
                           .map((entity, entityIndex) => {
-                            // Filter out "Users" and "ShopDetails" menu if user role is "staff"
+                            // Filter out "Users" menu if user role is "staff" (if needed in future)
                             if (user && user.role === "staff") {
-                              if (entity.name === "Users" || entity.name === "ShopDetails") {
+                              if (entity.name === "Users") {
                                 return null;
                               }
                             }

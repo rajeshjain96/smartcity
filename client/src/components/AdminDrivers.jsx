@@ -16,7 +16,8 @@ import { getEmptyObject, getShowInList } from "../utils/commonUtil";
 
 export default function AdminDrivers(props) {
   const navigate = useNavigate();
-  const selectedEntity = {
+  // Use selectedEntity from props if available, otherwise use default
+  const selectedEntity = props.selectedEntity || {
     name: "Drivers",
     singularName: "Driver",
     dbCollection: "drivers",

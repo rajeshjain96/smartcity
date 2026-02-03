@@ -10,6 +10,12 @@ export default function CommonUtilityBar(props) {
   let { filteredList } = props;
   let { mainList } = props;
   let { showInList } = props;
+  
+  // Safety check: ensure selectedEntity exists
+  if (!selectedEntity) {
+    console.warn("CommonUtilityBar: selectedEntity is undefined");
+    return null;
+  }
   let [flagExport, setFlagExport] = useState(false);
   const buttonBRef = useRef(null);
   function handleListClick() {

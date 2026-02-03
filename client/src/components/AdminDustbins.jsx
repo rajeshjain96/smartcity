@@ -46,7 +46,16 @@ export default function AdminDustbins(props) {
   let [cntUpdate, setCntUpdate] = useState(0);
   let [cntAdd, setCntAdd] = useState(0);
   let [cntShow, setCntShow] = useState(window.maxCnt); // Initially 5 attributes are shown
-  let { selectedEntity } = props;
+  // Use selectedEntity from props if available, otherwise use default
+  const selectedEntity = props.selectedEntity || {
+    name: "Dustbins",
+    singularName: "Dustbin",
+    dbCollection: "dustbins",
+    addFacility: true,
+    deleteFacility: true,
+    editFacility: true,
+    accessLevel: "A",
+  };
   let { flagFormInvalid } = props;
   let dustbinSchema = [
     { attribute: "binName", type: "normal" },

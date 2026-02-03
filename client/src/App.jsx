@@ -3,26 +3,16 @@ import AdminMainPage from "./components/AdminMainPage";
 import axios from "axios";
 import { Route, BrowserRouter as Router, Routes, Navigate } from "react-router-dom";
 import { useIsMobile } from "./utils/useIsMobile";
-import TrialPage from "./components/TrialPage";
-import OwnerPage from "./components/OwnerPage";
-import OwnerMainPage from "./components/OwnerMainPage";
 import CheckboxToggle from "./components/CheckboxToggle";
 import { EntityActionProvider } from "./contexts/EntityActionContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminLayout from "./components/AdminLayout";
 import ResidentLayout from "./components/ResidentLayout";
 import DriverLayout from "./components/DriverLayout";
 import AdminDashboard from "./components/AdminDashboard";
 import ResidentDashboard from "./components/ResidentDashboard";
 import DriverDashboard from "./components/DriverDashboard";
-import AdminCustomers from "./components/AdminCustomers";
-import AdminEnquiries from "./components/AdminEnquiries";
-import AdminMeasurements from "./components/AdminMeasurements";
-import AdminQuotations from "./components/AdminQuotations";
 import AdminUsers from "./components/AdminUsers";
-import AdminRates from "./components/AdminRates";
-import AdminCompanies from "./components/AdminCompanies";
-import AdminCatalogs from "./components/AdminCatalogs";
-import AdminShopDetails from "./components/AdminShopDetails";
 import AdminDustbins from "./components/AdminDustbins";
 import AdminAreas from "./components/AdminAreas";
 import AdminDrivers from "./components/AdminDrivers";
@@ -43,82 +33,45 @@ function App() {
             {/* Public Route - Login Page */}
             <Route path="/" element={<AdminMainPage />} />
             
-            {/* Admin Routes - Protected */}
+            {/* Admin Routes - Protected with AdminLayout */}
             <Route path="/admin" element={
               <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminMainPage />
+                <AdminLayout />
               </ProtectedRoute>
-            } />
-            <Route path="/admin/dashboard" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } />
+            }>
+              <Route index element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="areas" element={<AdminAreas />} />
+              <Route path="drivers" element={<AdminDrivers />} />
+              <Route path="dustbins" element={<AdminDustbins />} />
+              <Route path="pickup-requests" element={<AdminPickupRequests />} />
+              <Route path="users" element={<AdminUsers />} />
+            </Route>
             
-            {/* Admin Management Routes */}
-            <Route path="/customers" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminCustomers />
-              </ProtectedRoute>
-            } />
-            <Route path="/enquiries" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminEnquiries />
-              </ProtectedRoute>
-            } />
-            <Route path="/measurements" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminMeasurements />
-              </ProtectedRoute>
-            } />
-            <Route path="/quotations" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminQuotations />
-              </ProtectedRoute>
-            } />
-            <Route path="/users" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminUsers />
-              </ProtectedRoute>
-            } />
-            <Route path="/rates" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminRates />
-              </ProtectedRoute>
-            } />
-            <Route path="/companies" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminCompanies />
-              </ProtectedRoute>
-            } />
-            <Route path="/catalogs" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminCatalogs />
-              </ProtectedRoute>
-            } />
-            <Route path="/shopdetails" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminShopDetails />
-              </ProtectedRoute>
-            } />
-            <Route path="/dustbins" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminDustbins />
-              </ProtectedRoute>
-            } />
+            {/* Legacy routes - redirect to /admin/* namespace */}
             <Route path="/areas" element={
               <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminAreas />
+                <Navigate to="/admin/areas" replace />
               </ProtectedRoute>
             } />
             <Route path="/drivers" element={
               <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminDrivers />
+                <Navigate to="/admin/drivers" replace />
+              </ProtectedRoute>
+            } />
+            <Route path="/dustbins" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Navigate to="/admin/dustbins" replace />
               </ProtectedRoute>
             } />
             <Route path="/pickup-requests" element={
               <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminPickupRequests />
+                <Navigate to="/admin/pickup-requests" replace />
+              </ProtectedRoute>
+            } />
+            <Route path="/users" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Navigate to="/admin/users" replace />
               </ProtectedRoute>
             } />
             
@@ -159,7 +112,7 @@ function App() {
             } />
             
             {/* Legacy/Other Routes */}
-            <Route path="/ownerrajesh" element={<OwnerMainPage />} />
+            {/* <Route path="/ownerrajesh" element={<OwnerMainPage />} /> */}
             <Route path="/trial" element={<CheckboxToggle />} />
             
             {/* Catch all - redirect to home */}
