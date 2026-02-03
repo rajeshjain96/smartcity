@@ -1,0 +1,12 @@
+SECRET_KEY="utyeutysudgdg7583reujrjh"
+# MONGODB_URL=mongodb://127.0.0.1:27017
+MONGODB_URL="mongodb://rjadmin:naniKapyar%4011@147.93.103.138:27017/?authSource=admin"
+DB_NAME="homedecordb"
+JWT_EXPIRY=1h
+PORT=3002
+ORIGIN="http://localhost:5171"
+OTP_EXPIRY_MINUTES=10
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=rajeshjainacademy@gmail.com
+EMAIL_PASS=exwyvmtxmpfixvfa

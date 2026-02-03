@@ -1,0 +1,123 @@
+Complete Workflow for Managing Company Activities
+
+1. Customer Inquiry and Data Input
+
+[ Record Customer Inquiry ] (Name, Contact Details, Source, Product, Requirements, etc.)
+
+[ Verify Customer Details ]
+
+[ Acknowledge Inquiry ] (Send a thank-you message to the customer)
+
+2. Sending Information to Customer
+
+[ Send Product Photos ]
+
+[ Send Product Videos ]
+
+[ Send Brochure ]
+
+[ Send Pricing Details ]
+
+[ Send Terms & Conditions ]
+
+[ Send Custom Information ]
+
+[ Schedule Follow-Up ]
+
+3. Site Visit and Data Collection
+
+[ Capture Site Photos ]
+
+[ Upload Site Video ]
+
+[ Record Site Dimensions ]
+
+[ Log Soil Condition ]
+
+[ Note Accessibility Details ]
+
+[ Mark Utility Availability ] (e.g., Water, Electricity)
+
+[ List Required Materials ]
+
+[ Submit Site Visit Report ]
+
+4. Architectural and Fabrication Planning
+
+[ Forward Site Data to Architectural Team ]
+
+[ Request Architectural Drawing ]
+
+[ Generate Fabrication Drawing ]
+
+[ Prepare Bill of Materials (BOM) ]
+
+5. Vendor Quotation Management
+
+[ Share Drawings with Vendors ]
+
+[ Request Material Quotations ]
+
+[ Request Fabrication Labor Quotations ]
+
+[ Compare Vendor Quotations ]
+
+[ Approve Vendor ]
+
+6. Customer Quotation and Approval
+
+[ Prepare Customer Quotation ]
+
+[ Share Quotation with Customer ]
+
+[ Approve Quotation ]
+
+7. Purchase Order and Work Order Management
+
+[ Prepare Purchase Order (PO) ]
+
+[ Share PO with Customer for Approval ]
+
+[ Generate Internal Work Order ]
+
+[ Generate Internal Purchase Orders for Vendors ]
+
+[ Share Internal POs with Vendors ]
+
+[ Track Vendor Deliverables ]
+
+8. Material Dispatch
+
+[ Verify Material Readiness ]
+
+[ Arrange Transportation ]
+
+[ Prepare Dispatch Note ]
+
+[ Notify Customer of Dispatch ]
+
+[ Track Material Dispatch Status ]
+
+9. Installation at Site
+
+[ Confirm Material Receipt at Site ]
+
+[ Schedule Installation Activity ]
+
+[ Assign Installation Team ]
+
+[ Track Installation Progress ]
+
+[ Submit Installation Completion Report ]
+
+10. Project Completion and Archiving
+
+[ Mark Project as Completed ]
+
+[ Record Project Details ] (Size, Location, Materials Used, etc.)
+
+[ Upload Project Photos and Videos ]
+
+[ Save Customer Feedback ]
+
+[ Archive Project for Future Reference ]

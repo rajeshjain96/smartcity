@@ -1,0 +1,52 @@
+let AdminManageMenus = {
+  name: "Manage",
+  accessLevel: "D",
+  entities: [
+    {
+      name: "Customers",
+      singularName: "Customer",
+      addFacility: true,
+      deleteFacility: true,
+      editFacility: true,
+      isReady: true,
+      accessLevel: "A",
+    },
+    {
+      name: "Enquiries",
+      singularName: "Enquiry",
+      addFacility: true,
+      deleteFacility: true,
+      editFacility: true,
+      isReady: true,
+      accessLevel: "A",
+    },
+    {
+      name: "Measurements",
+      singularName: "Measurement",
+      addFacility: true,
+      deleteFacility: true,
+      editFacility: true,
+      isReady: true,
+      accessLevel: "A",
+    },
+    {
+      name: "Quotations",
+      singularName: "Quotation",
+      addFacility: false,
+      deleteFacility: true,
+      editFacility: true,
+      isReady: true,
+      accessLevel: "A",
+    },
+    {
+      name: "Pickup Requests",
+      singularName: "Pickup Request",
+      addFacility: false,
+      deleteFacility: true,
+      editFacility: true,
+      isReady: true,
+      accessLevel: "A",
+    },
+  ],
+};
+export default AdminManageMenus;

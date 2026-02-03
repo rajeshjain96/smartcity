@@ -1,0 +1,448 @@
+
+/* Container Styling */
+.add-form {
+  /* max-width: 800px; */
+  margin: auto 10px;
+  padding: 20px;
+  background-color: #f8f9fa; /* Light Gray Background */
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 50%;
+}
+
+.add-form-ele {
+  padding: 20px;
+  background-color: #ffffff; /* White Background for the form */
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.add-form-form {
+  /* display: flex; */
+  /* flex-direction: column; */
+}
+
+.heading-add-pro {
+  font-size: 24px;
+  color: #0069d9; /* Dark Blue for Header */
+  margin-bottom: 20px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Form Element Styling */
+.add-form-input {
+  /* margin-bottom: 16px; */
+  /* display: flex;
+  flex-direction: column; */
+}
+
+.add-form-input label {
+  font-size: 14px;
+  color: #343a40; /* Dark Gray for Text */
+  margin-bottom: 8px;
+}
+
+/* Highlighting Elements on Focus */
+.add-form-else-ele:focus,
+.add-form-textarea:focus,
+.add-form-dropdown:focus {
+  border-color: #0056b3; /* Darker Blue when focused */
+  background-color: #e6f1ff; /* Light Blue Background on Focus */
+  box-shadow: 0 0 8px rgba(0, 86, 179, 0.5); /* Soft blue glow */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  /* width: 100%; */
+}
+input[type='text'], textarea
+{
+    width: 100%;
+}
+
+.add-form-else-ele,
+.add-form-textarea,
+.add-form-dropdown {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #007bff; /* Blue border */
+  border-radius: 4px;
+  outline: none;
+  background-color: #ffffff; /* White Input Background */
+  color: #343a40; /* Dark Gray Text */
+  transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Styling for Hover */
+.add-form-else-ele:hover,
+.add-form-textarea:hover,
+.add-form-dropdown:hover {
+  background-color: #f1f8ff; /* Light Grayish Blue Background on Hover */
+  border-color: #0069d9; /* Slightly Darker Blue on Hover */
+}
+
+.add-form-textarea {
+  resize: vertical;
+}
+
+/* Checkbox and Radio Buttons */
+.add-form-checkbox-group,
+.add-form-radio,
+.add-form-checkbox {
+  margin-bottom: 10px;
+}
+
+.add-form-checkbox-group input,
+.add-form-radio input,
+.add-form-checkbox input {
+  margin-right: 8px;
+}
+
+.add-form-checkbox-group label,
+.add-form-radio label {
+  font-size: 14px;
+  color: #343a40; /* Dark Gray Text */
+}
+
+/* Button Styling */
+.add-form-but {
+  /* display: flex; */
+  /* justify-content: space-between; */
+  /* gap: 12px; */
+  /* margin-top: 20px; */
+}
+
+.add-form-but button {
+  padding: 12px 20px;
+  font-size: 16px;
+  background-color: #007bff; /* Blue Button */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+}
+
+.add-form-but button:hover {
+  background-color: #0056b3; /* Dark Blue on Hover */
+  box-shadow: 0 0 15px rgba(0, 86, 179, 0.5);
+}
+
+.add-form-but button[type="button"] {
+  background-color: #b0b0b0; /* Gray for Disabled Button */
+  color: #333333;
+}
+
+.add-form-but button[type="button"]:hover {
+  background-color: #8f8f8f; /* Darker Gray */
+}
+
+.add-form-but button:disabled {
+  background-color: #b0b0b0; /* Gray */
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Validation message styling */
+.validation-message-container {
+  margin-top: 0.5rem;
+  min-height: 1.5rem;
+}
+
+.validation-message {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #fff5f5;
+  border-left: 3px solid #ef4444;
+  border-radius: 0.375rem;
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-weight: 500;
+  animation: slideIn 0.2s ease-out;
+}
+
+.validation-message i {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Form Error Message Styling - Aesthetic and Modern */
+.form-error-message {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border-left: 3px solid #ef4444;
+  border-radius: 0.5rem;
+  color: #dc2626;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
+  animation: errorSlideIn 0.3s ease-out;
+  line-height: 1.4;
+}
+
+.form-error-message i {
+  font-size: 0.875rem;
+  flex-shrink: 0;
+  color: #ef4444;
+}
+
+@keyframes errorSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ========= Customer form (add / update) ========= */
+.customer-form-wrapper {
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.customer-form-card {
+  border-radius: 1.25rem;
+  border-color: rgba(40, 22, 111, 0.18);
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.12);
+  background: linear-gradient(135deg, #ffffff, #f8fbff);
+}
+
+.customer-form-header {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.customer-form-title {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.customer-form-subtitle {
+  font-size: 0.875rem; /* 14px - standard for subtitles */
+  color: #6b7280;
+}
+
+.customer-input-group .customer-input-icon {
+  background: #f3f4ff;
+  border-radius: 0.9rem 0 0 0.9rem;
+  border-color: rgba(148, 163, 184, 0.6);
+  color: #4b5563;
+  font-size: 1rem; /* 16px - standard icon size */
+}
+
+.customer-input {
+  border-radius: 0 0.9rem 0.9rem 0;
+  border-color: rgba(148, 163, 184, 0.6);
+  font-size: 1rem; /* 16px - standard input size (prevents zoom on iOS) */
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+.customer-textarea {
+  font-size: 1rem; /* 16px - standard textarea size */
+}
+
+.customer-input:focus {
+  border-color: rgb(40, 22, 111);
+  box-shadow: 0 0 0 1px rgba(40, 22, 111, 0.18);
+}
+
+.customer-textarea-wrapper {
+  border-radius: 0.9rem;
+  overflow: hidden;
+}
+
+.customer-textarea {
+  border-radius: 0.9rem;
+  resize: vertical;
+  font-size: 1rem; /* 16px - standard textarea size */
+}
+
+.customer-form-actions {
+  border-top: 1px dashed rgba(148, 163, 184, 0.7);
+  padding-top: 0.75rem;
+}
+
+/* Form label standard size */
+.customer-form-wrapper .form-label {
+  font-size: 0.875rem; /* 14px - standard label size */
+  font-weight: 500;
+}
+
+/* Form title responsive */
+.customer-form-title {
+  font-size: 1.5rem; /* 24px - standard heading size */
+}
+
+/* Standard form label sizes */
+.form-label-responsive {
+  font-size: 0.875rem; /* 14px - standard label size */
+  font-weight: 500;
+}
+
+/* Standard form text sizes */
+.form-text-responsive {
+  font-size: 0.875rem; /* 14px - standard text size */
+}
+
+/* Responsive adjustments for customer forms */
+@media screen and (max-width: 768px) {
+  .customer-form-title {
+    font-size: 1.25rem; /* 20px - slightly smaller on tablets */
+  }
+  
+  .customer-form-subtitle {
+    font-size: 0.8125rem; /* 13px - slightly smaller on tablets */
+  }
+  
+  .customer-form-wrapper .form-label,
+  .form-label-responsive {
+    font-size: 0.8125rem; /* 13px - slightly smaller on tablets */
+  }
+  
+  .form-text-responsive {
+    font-size: 0.8125rem; /* 13px - slightly smaller on tablets */
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .customer-form-title {
+    font-size: 1.125rem; /* 18px - mobile heading */
+  }
+  
+  .customer-form-subtitle {
+    font-size: 0.75rem; /* 12px - mobile subtitle */
+  }
+  
+  .customer-form-wrapper .form-label,
+  .form-label-responsive {
+    font-size: 0.75rem; /* 12px - mobile label */
+  }
+  
+  .form-text-responsive {
+    font-size: 0.75rem; /* 12px - mobile text */
+  }
+  
+  /* Keep input font-size at 16px on mobile to prevent zoom */
+  .customer-input,
+  .customer-textarea {
+    font-size: 1rem; /* 16px - prevents iOS zoom */
+  }
+  
+  .customer-input-group .customer-input-icon {
+    font-size: 0.875rem; /* 14px - slightly smaller icon on mobile */
+  }
+  
+  /* Reduce padding for mobile forms */
+  .customer-form-wrapper {
+    margin-left: 0;
+    margin-right: 0;
+    max-width: 100%;
+  }
+  
+  .customer-form-wrapper.my-3 {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  
+  .text-thick.p-4 {
+    padding: 0.5rem !important;
+  }
+  
+  .customer-form-header {
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .customer-form-actions {
+    padding-top: 0.5rem;
+  }
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+  .heading-add-pro {
+    font-size: 1.25rem; /* 20px - tablet heading */
+  }
+  
+  .add-form-input label {
+    font-size: 0.8125rem; /* 13px - tablet label */
+  }
+  
+  .add-form-else-ele,
+  .add-form-textarea,
+  .add-form-dropdown {
+    font-size: 1rem; /* 16px - standard input size */
+  }
+  
+  .add-form-but button {
+    font-size: 0.9375rem; /* 15px - slightly smaller button text */
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .add-form {
+    padding: 0.25rem;
+    width: 100%;
+    margin: 0.25rem;
+  }
+
+  .add-form-ele {
+    padding: 0.5rem;
+  }
+
+  .add-form-input {
+    margin-bottom: 12px;
+  }
+
+  .add-form-input label {
+    font-size: 0.75rem; /* 12px - mobile label */
+  }
+
+  /* Keep input font-size at 16px on mobile to prevent zoom */
+  .add-form-else-ele,
+  .add-form-textarea,
+  .add-form-dropdown {
+    font-size: 1rem; /* 16px - prevents iOS zoom */
+  }
+
+  .heading-add-pro {
+    font-size: 1.125rem; /* 18px - mobile heading */
+  }
+
+  .add-form-but {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .add-form-but button {
+    width: 100%;
+    margin-bottom: 10px;
+    font-size: 0.875rem; /* 14px - mobile button text */
+  }
+
+  .add-form-but button[type="button"] {
+    margin-bottom: 10px;
+  }
+}
