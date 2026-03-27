@@ -7,7 +7,6 @@ const logger = require("../logger");
 const ms = require("ms");
 const crypto = require("crypto");
 const { sendOTPEmail } = require("../utils/mailer");
-const { ObjectId } = require("mongodb");
 // const upload = multer({ dest: "uploads/" });
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -75,39 +74,75 @@ router.post(
   async (req, res, next) => {
     try {
       let obj = req.body;
-      
-      // Check if user with this emailId already exists
+      const validRoles = ["admin", "driver", "resident"];
+
       const client = req.app.locals.mongoClient;
-      const db = client.db(process.env.DB_NAME);
+      const db = req.app.locals.db || client.db(process.env.DB_NAME);
       const collection = db.collection("users");
+
       const existingUser = await collection.findOne({
         emailId: obj.emailId,
       });
       if (existingUser) {
-        return res.status(409).json({ error: "User with this email ID already exists." });
+        return res
+          .status(409)
+          .json({ error: "User with this email ID already exists." });
       }
-      
-      // Generate a random 6-digit password
+
+      if (obj.mobileNumber && String(obj.mobileNumber).trim()) {
+        const existingMobile = await collection.findOne({
+          mobileNumber: String(obj.mobileNumber).trim(),
+        });
+        if (existingMobile) {
+          return res
+            .status(409)
+            .json({ error: "User with this mobile number already exists." });
+        }
+      }
+
+      const adminPassword =
+        obj.password != null && String(obj.password).trim() !== "";
+
+      if (adminPassword) {
+        if (!obj.name || !obj.emailId) {
+          return res.status(422).json({
+            error: "Name and email or mobile (login id) are required.",
+          });
+        }
+        if (!validRoles.includes(obj.role)) {
+          return res.status(422).json({ error: "Invalid role." });
+        }
+        obj.addDate = new Date();
+        obj.updateDate = new Date();
+        obj.status = "active";
+        obj.activeStatus = true;
+        obj = await UserService.addUser(obj);
+        return res.status(201).json(obj);
+      }
+
+      obj.role = obj.role || "resident";
+      if (!validRoles.includes(obj.role)) {
+        return res.status(422).json({ error: "Invalid role." });
+      }
+
       obj.password = crypto.randomInt(100000, 1000000).toString();
       obj.addDate = new Date();
       obj.updateDate = new Date();
-      
-      // Store password temporarily for email before calling addUser (which removes it)
+      obj.status = obj.status || "active";
+      obj.activeStatus = obj.activeStatus !== false;
+
       const tempPassword = obj.password;
       const userEmailId = obj.emailId;
-      
+
       obj = await UserService.addUser(obj);
-      
-      // Send password to user via email
+
       try {
         await sendOTPEmail(userEmailId, tempPassword);
         console.log(`Password email sent to ${userEmailId}`);
       } catch (emailError) {
         console.error("Error sending password email:", emailError);
-        // Don't fail the user creation if email fails, but log it
       }
-      
-      // Password is already removed by addUser service, just return the user
+
       res.status(201).json(obj);
     } catch (error) {
       next(error); // Send error to middleware
@@ -123,6 +158,8 @@ router.post("/signup", async (req, res, next) => {
       obj.role = obj.role || "resident"; // Allow role to be set, default to resident
       obj.addDate = new Date();
       obj.updateDate = new Date();
+      obj.status = obj.status || "active";
+      obj.activeStatus = true;
       await UserService.addUser(obj);
       res.status(201).json({ message: "Signup Operation Successful" });
     } //if
@@ -156,49 +193,52 @@ router.post("/login", async (req, res, next) => {
     let obj = req.body;
     let userObj = await UserService.checkUserTryingToLogIn(obj);
     if (!userObj) {
-      // No such user
       res.status(409).json({ error: "Wrong emailId" });
-    } else if (userObj.status == "disabled") {
+    } else if (
+      userObj.status == "disabled" ||
+      userObj.activeStatus === false
+    ) {
       res.status(403).json({ error: "Contact Admin." });
     } else if (userObj.password == "") {
-      //First time login by user, he/she needs to signup first
       res.status(403).json({ error: "Signup First" });
-    } else if (userObj.password != obj.password) {
-      // wrong password
-      res.status(403).json({ error: "Wrong password" });
-    } else if (userObj.password === obj.password) {
-      // Create clean JWT payload with ONLY: userId, name, role
+    } else {
+      const passwordOk = await UserService.verifyPassword(
+        obj.password,
+        userObj.password
+      );
+      if (!passwordOk) {
+        res.status(403).json({ error: "Wrong password" });
+        return;
+      }
       const jwtPayload = {
         userId: userObj._id.toString(),
         name: userObj.name || "",
-        role: userObj.role || "resident"
+        role: userObj.role || "resident",
       };
-      
-      // Prepare user object for client (without password and sensitive fields)
+
       const userForClient = {
         _id: userObj._id,
         name: userObj.name,
         emailId: userObj.emailId,
         role: userObj.role,
-        status: userObj.status
+        status: userObj.status,
       };
-      
+
       console.log(
         "Logged in success.. " + userObj.emailId + " " + userObj.role
       );
-      
-      // Create JWT token with clean payload
+
       const token = jwt.sign(jwtPayload, process.env.SECRET_KEY, {
         expiresIn: process.env.JWT_EXPIRY,
       });
-      
+
       res.cookie("token", token, {
         httpOnly: true,
         secure: true, // Set to true in production with HTTPS
         sameSite: "Lax",
         maxAge: ms(process.env.JWT_EXPIRY),
       });
-      
+
       res
         .status(201)
         .json({ user: userForClient, message: "Logged in Successfully" });

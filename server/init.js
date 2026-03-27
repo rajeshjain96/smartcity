@@ -37,7 +37,8 @@ async function connectToDatabase(retries = 3, delay = 5000) {
   for (let i = 0; i < retries; i++) {
     try {
       await client.connect();
-      // app.locals.db = client.db(process.env.DB_NAME);
+      const db = client.db(process.env.DB_NAME);
+      app.locals.db = db;
       app.locals.mongoClient = client;
       console.log("Database connected successfully...");
       server.listen(process.env.PORT, () => {
