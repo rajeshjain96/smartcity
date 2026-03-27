@@ -77,7 +77,10 @@ export default function MapComponent({ markers = [], center: providedCenter, zoo
           }
           
           const status = marker.status || "default";
-          const color = statusColors[status] || statusColors.default;
+          const color =
+            marker.colorOverride ||
+            statusColors[status] ||
+            statusColors.default;
           const customIcon = createCustomIcon(color);
 
           return (

@@ -13,10 +13,35 @@ export default function AdminDashboard() {
     collectedRequests: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [predictions, setPredictions] = useState([]);
+  const [predictionsLoading, setPredictionsLoading] = useState(true);
 
   useEffect(() => {
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    fetchPredictions();
+  }, []);
+
+  async function fetchPredictions() {
+    setPredictionsLoading(true);
+    try {
+      const res = await axios.get("/predictions/dustbins");
+      setPredictions(Array.isArray(res.data) ? res.data : []);
+    } catch (e) {
+      console.error("Predictions load failed:", e);
+      setPredictions([]);
+    } finally {
+      setPredictionsLoading(false);
+    }
+  }
+
+  function riskBadgeClass(level) {
+    if (level === "High") return "bg-danger";
+    if (level === "Medium") return "bg-warning text-dark";
+    return "bg-secondary";
+  }
 
   async function fetchStats() {
     setLoading(true);
@@ -128,6 +153,62 @@ export default function AdminDashboard() {
               <i className="bi bi-check-circle fs-1 text-success"></i>
               <h3 className="mt-3 mb-0">{stats.collectedRequests}</h3>
               <p className="text-muted mb-0">Collected Today</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Fill prediction — simple frequency heuristic over recent pickups */}
+      <div className="row mt-4">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-body">
+              <h5 className="card-title mb-1">
+                <i className="bi bi-graph-up-arrow me-2 text-danger"></i>
+                High Risk Dustbins
+              </h5>
+              <p className="text-muted small mb-3">
+                Predicted from pickup request frequency per dustbin (last{" "}
+                {predictions[0]?.windowDays ?? 14} days). Higher recent demand suggests
+                the bin may become full sooner — for demonstration only.
+              </p>
+              {predictionsLoading ? (
+                <div className="py-4 d-flex justify-content-center">
+                  <LoadingSpinner size={36} />
+                </div>
+              ) : predictions.length === 0 ? (
+                <p className="text-muted mb-0">No dustbin data available.</p>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table table-sm table-hover align-middle mb-0">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Dustbin</th>
+                        <th>Area</th>
+                        <th className="text-end">Requests</th>
+                        <th>Risk level</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {predictions.map((p) => (
+                        <tr
+                          key={p.dustbinId}
+                          className={p.riskLevel === "High" ? "table-danger" : ""}
+                        >
+                          <td>{p.dustbinName}</td>
+                          <td>{p.areaName}</td>
+                          <td className="text-end text-muted">{p.requestCount}</td>
+                          <td>
+                            <span className={`badge ${riskBadgeClass(p.riskLevel)}`}>
+                              {p.riskLevel}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>

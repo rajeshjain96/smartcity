@@ -18,6 +18,7 @@ import AdminAreas from "./components/AdminAreas";
 import AdminDrivers from "./components/AdminDrivers";
 import AdminPickupRequests from "./components/AdminPickupRequests";
 import AdminMapView from "./components/AdminMapView";
+import AdminReportsDashboard from "./components/AdminReportsDashboard";
 import ResidentPickupRequests from "./components/ResidentPickupRequests";
 import DriverPickupRequests from "./components/DriverPickupRequests";
 import DriverMapView from "./components/DriverMapView";
@@ -49,6 +50,7 @@ function App() {
               <Route path="pickup-requests" element={<AdminPickupRequests />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="map" element={<AdminMapView />} />
+              <Route path="reports" element={<AdminReportsDashboard />} />
             </Route>
             
             {/* Legacy routes - redirect to /admin/* namespace */}

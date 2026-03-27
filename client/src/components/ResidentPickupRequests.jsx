@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "./AxiosInstance";
 import LoadingSpinner from "./LoadingSpinner";
@@ -34,6 +34,17 @@ export default function ResidentPickupRequests(props) {
     }
     setFlagLoad(false);
   }
+
+  const getDataRef = useRef(getData);
+  getDataRef.current = getData;
+
+  useEffect(() => {
+    const onRefresh = () => {
+      getDataRef.current();
+    };
+    window.addEventListener("residentPickupRefresh", onRefresh);
+    return () => window.removeEventListener("residentPickupRefresh", onRefresh);
+  }, []);
 
   async function getDustbins() {
     try {

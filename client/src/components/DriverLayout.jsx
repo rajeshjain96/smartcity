@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
+import { io } from "socket.io-client";
 import axios from "./AxiosInstance";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -7,8 +8,31 @@ export default function DriverLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
+  const [driverDocId, setDriverDocId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [assignToast, setAssignToast] = useState({ show: false, message: "" });
+  const [pickupBadgeCount, setPickupBadgeCount] = useState(0);
+  const [highlightPickupsNav, setHighlightPickupsNav] = useState(false);
+
+  const playAssignNotificationSound = useCallback(() => {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 660;
+      gain.gain.setValueAtTime(0.06, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.12);
+    } catch {
+      /* ignore */
+    }
+  }, []);
   
   // Determine active menu item
   const isActive = (path) => {
@@ -19,13 +43,71 @@ export default function DriverLayout() {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    if (location.pathname.includes("/driver/pickups")) {
+      setPickupBadgeCount(0);
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!assignToast.show) return;
+    const t = setTimeout(() => {
+      setAssignToast((prev) => ({ ...prev, show: false }));
+    }, 5500);
+    return () => clearTimeout(t);
+  }, [assignToast.show]);
+
+  useEffect(() => {
+    if (!user || !driverDocId) return;
+    const base = import.meta.env.VITE_API_URL;
+    if (!base) return;
+
+    const socket = io(base, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+    });
+
+    const onConnect = () => {
+      socket.emit("joinDriverRoom", driverDocId);
+    };
+
+    const onPickupAssigned = (payload) => {
+      const area = payload?.areaName || "Unknown area";
+      setAssignToast({
+        show: true,
+        message: `New pickup assigned in ${area}`,
+      });
+      setPickupBadgeCount((c) => c + 1);
+      setHighlightPickupsNav(true);
+      setTimeout(() => setHighlightPickupsNav(false), 4000);
+      playAssignNotificationSound();
+    };
+
+    socket.on("connect", onConnect);
+    socket.on("pickupAssignedToDriver", onPickupAssigned);
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("pickupAssignedToDriver", onPickupAssigned);
+      socket.disconnect();
+    };
+  }, [user, driverDocId, playAssignNotificationSound]);
+
   async function checkAuth() {
     try {
       const response = await axios.get("/users/hello");
       const userData = response.data;
-      
+
       if (userData && userData.role === "driver") {
         setUser(userData);
+        try {
+          const dr = await axios.get(`/drivers/user/${userData.userId}`);
+          if (dr.data && dr.data._id) {
+            setDriverDocId(String(dr.data._id));
+          }
+        } catch {
+          /* driver profile may not exist yet */
+        }
       } else {
         navigate("/");
       }
@@ -56,6 +138,27 @@ export default function DriverLayout() {
 
   return (
     <div className="d-flex" style={{ minHeight: "100vh" }}>
+      {assignToast.show && (
+        <div
+          className="position-fixed top-0 end-0 p-3"
+          style={{ zIndex: 2000, maxWidth: "min(100%, 380px)" }}
+        >
+          <div className="toast show shadow" role="alert">
+            <div className="toast-header bg-success text-white">
+              <i className="bi bi-truck me-2"></i>
+              <strong className="me-auto">Pickup assigned</strong>
+              <button
+                type="button"
+                className="btn-close btn-close-white"
+                aria-label="Close"
+                onClick={() => setAssignToast((prev) => ({ ...prev, show: false }))}
+              />
+            </div>
+            <div className="toast-body">{assignToast.message}</div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar */}
       <div 
         className={`bg-dark text-white ${sidebarOpen ? "d-block" : "d-none d-md-block"}`}
@@ -80,12 +183,17 @@ export default function DriverLayout() {
               <i className="bi bi-speedometer2 me-2"></i>
               Dashboard
             </Link>
-            <Link 
-              to="/driver/pickups" 
-              className={`nav-link text-white ${isActive("/driver/pickups") ? "bg-secondary bg-opacity-50 rounded" : ""}`}
+            <Link
+              to="/driver/pickups"
+              className={`nav-link text-white ${
+                isActive("/driver/pickups") ? "bg-secondary bg-opacity-50 rounded" : ""
+              } ${highlightPickupsNav ? "border border-warning border-2 rounded shadow-sm" : ""}`}
             >
               <i className="bi bi-clipboard-check me-2"></i>
               My Pickups
+              {pickupBadgeCount > 0 && (
+                <span className="badge bg-danger rounded-pill ms-1">{pickupBadgeCount}</span>
+              )}
             </Link>
             <Link 
               to="/driver/map" 

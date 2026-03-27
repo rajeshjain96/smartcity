@@ -2,12 +2,36 @@
 require("./config/env.js");
 
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 const { MongoClient } = require("mongodb");
 // const mongodb = require("mongodb");
 // const url = "mongodb://127.0.0.1:27017";
 const client = new MongoClient(process.env.MONGODB_URL);
 let db;
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.ORIGIN || true,
+    credentials: true,
+    methods: ["GET", "POST"],
+  },
+});
+app.set("io", io);
+
+io.on("connection", (socket) => {
+  socket.on("joinDriverRoom", (driverId) => {
+    if (typeof driverId === "string" && /^[a-f0-9]{24}$/i.test(driverId)) {
+      socket.join(`driver:${driverId}`);
+    }
+  });
+  socket.on("joinResidentRoom", (userId) => {
+    if (typeof userId === "string" && /^[a-f0-9]{24}$/i.test(userId)) {
+      socket.join(`resident:${userId}`);
+    }
+  });
+});
 
 async function connectToDatabase(retries = 3, delay = 5000) {
   for (let i = 0; i < retries; i++) {
@@ -16,7 +40,7 @@ async function connectToDatabase(retries = 3, delay = 5000) {
       // app.locals.db = client.db(process.env.DB_NAME);
       app.locals.mongoClient = client;
       console.log("Database connected successfully...");
-      app.listen(process.env.PORT, () => {
+      server.listen(process.env.PORT, () => {
         console.log("Server started at port number ..." + process.env.PORT);
       });
       return;

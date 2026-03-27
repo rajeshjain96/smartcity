@@ -9,6 +9,7 @@ export default function AdminMapView() {
   const [driverList, setDriverList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [markers, setMarkers] = useState([]);
+  const [predictionByDustbinId, setPredictionByDustbinId] = useState({});
 
   useEffect(() => {
     fetchData();
@@ -18,20 +19,27 @@ export default function AdminMapView() {
     if (dustbinList.length > 0 && areaList.length > 0 && driverList.length > 0) {
       createMarkers();
     }
-  }, [dustbinList, areaList, driverList]);
+  }, [dustbinList, areaList, driverList, predictionByDustbinId]);
 
   async function fetchData() {
     setLoading(true);
     try {
-      const [dustbinsRes, areasRes, driversRes] = await Promise.all([
+      const [dustbinsRes, areasRes, driversRes, predictionsRes] = await Promise.all([
         axios.get("/dustbins"),
         axios.get("/areas"),
         axios.get("/drivers"),
+        axios.get("/predictions/dustbins").catch(() => ({ data: [] })),
       ]);
 
       setDustbinList(dustbinsRes.data || []);
       setAreaList(areasRes.data || []);
       setDriverList(driversRes.data || []);
+      const preds = predictionsRes.data || [];
+      const map = {};
+      preds.forEach((p) => {
+        if (p.dustbinId) map[p.dustbinId] = p;
+      });
+      setPredictionByDustbinId(map);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -59,11 +67,29 @@ export default function AdminMapView() {
         );
         const driverName = driver ? driver.driverName : "Not Assigned";
 
+        const pred = predictionByDustbinId[dustbin._id?.toString?.() || dustbin._id];
+        const riskLevel = pred?.riskLevel;
+        let colorOverride = null;
+        if (riskLevel === "High") colorOverride = "#dc3545";
+        else if (riskLevel === "Medium") colorOverride = "#fd7e14";
+
         const popupContent = (
           <div>
             <h6 style={{ marginBottom: "8px", fontWeight: "bold" }}>{dustbin.binName}</h6>
             <div style={{ fontSize: "14px", lineHeight: "1.6" }}>
               <div><strong>Area:</strong> {areaName}</div>
+              {pred && (
+                <div>
+                  <strong>Fill risk (recent pickups):</strong>{" "}
+                  <span style={{
+                    color: riskLevel === "High" ? "#dc3545" : riskLevel === "Medium" ? "#fd7e14" : "#6c757d",
+                    fontWeight: "bold",
+                  }}>{riskLevel}</span>
+                  {typeof pred.requestCount === "number" && (
+                    <span className="text-muted"> ({pred.requestCount} in {pred.windowDays}d)</span>
+                  )}
+                </div>
+              )}
               <div><strong>Status:</strong> <span style={{ 
                 color: dustbin.status === "Empty" ? "#28a745" : 
                        dustbin.status === "Half" ? "#ffc107" : "#dc3545",
@@ -84,6 +110,7 @@ export default function AdminMapView() {
           id: dustbin._id,
           position: [dustbin.location.lat, dustbin.location.lng],
           status: dustbin.status,
+          colorOverride,
           popupContent,
         };
       });
@@ -105,6 +132,7 @@ export default function AdminMapView() {
         <h3>Dustbin Map View</h3>
         <p className="text-muted">
           View all dustbins on the map. Click on markers to see details.
+          High fill-risk dustbins (from recent pickup frequency) use red markers; medium risk uses orange.
         </p>
       </div>
       

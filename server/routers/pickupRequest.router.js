@@ -153,6 +153,26 @@ router.post("/", upload.any(), async (req, res, next) => {
     }
     
     obj = await PickupRequestService.addPickupRequest(req, obj);
+
+    const io = req.app.get("io");
+    if (io) {
+      try {
+        const enriched = await PickupRequestService.getPickupRequestById(
+          req,
+          obj._id.toString()
+        );
+        if (enriched) {
+          io.emit("newPickupRequest", {
+            requestId: enriched._id.toString(),
+            area: enriched.areaName || "N/A",
+            dustbinName: enriched.dustbinName || "N/A",
+          });
+        }
+      } catch (emitErr) {
+        console.error("newPickupRequest socket emit:", emitErr);
+      }
+    }
+
     res.status(201).json(obj);
   } catch (error) {
     next(error);

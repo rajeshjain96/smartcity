@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
+import { io } from "socket.io-client";
 import axios from "./AxiosInstance";
 import LoadingSpinner from "./LoadingSpinner";
 import AdminManageMenus from "./AdminManageMenus";
@@ -14,6 +15,28 @@ export default function AdminLayout() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedMenuIndex, setSelectedMenuIndex] = useState(-1);
+  const [pickupToast, setPickupToast] = useState({ show: false, message: "" });
+  const [pickupBadgeCount, setPickupBadgeCount] = useState(0);
+  const [highlightPickupNav, setHighlightPickupNav] = useState(false);
+
+  const playPickupNotificationSound = useCallback(() => {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.06, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.12);
+    } catch {
+      /* ignore */
+    }
+  }, []);
   
   const adminMenus = [];
   adminMenus.push(AdminManageMenus);
@@ -32,6 +55,7 @@ export default function AdminLayout() {
     if (pathname.includes("/admin/drivers")) return { menuIndex: 0, entityName: "Drivers" };
     if (pathname.includes("/admin/dustbins")) return { menuIndex: 0, entityName: "Dustbins" };
     if (pathname.includes("/admin/pickup-requests")) return { menuIndex: 1, entityName: "Pickup Requests" };
+    if (pathname.includes("/admin/reports")) return { menuIndex: 2, entityName: "Reports Dashboard" };
     if (pathname.includes("/admin/users")) return { menuIndex: 3, entityName: "Users" };
     if (pathname.includes("/admin/dashboard")) return { menuIndex: -1, entityName: "Dashboard" };
     return null;
@@ -48,6 +72,51 @@ export default function AdminLayout() {
       setSelectedMenuIndex(menuInfo.menuIndex);
     }
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (location.pathname.includes("/admin/pickup-requests")) {
+      setPickupBadgeCount(0);
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!pickupToast.show) return;
+    const t = setTimeout(() => {
+      setPickupToast((prev) => ({ ...prev, show: false }));
+    }, 5500);
+    return () => clearTimeout(t);
+  }, [pickupToast.show]);
+
+  useEffect(() => {
+    if (!user) return;
+    const base = import.meta.env.VITE_API_URL;
+    if (!base) return;
+
+    const socket = io(base, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+    });
+
+    const onNewPickup = (payload) => {
+      const area = payload?.area || "Unknown area";
+      setPickupToast({
+        show: true,
+        message: `New pickup request created in ${area}`,
+      });
+      setPickupBadgeCount((c) => c + 1);
+      setSelectedMenuIndex(1);
+      setHighlightPickupNav(true);
+      setTimeout(() => setHighlightPickupNav(false), 4000);
+      playPickupNotificationSound();
+    };
+
+    socket.on("newPickupRequest", onNewPickup);
+
+    return () => {
+      socket.off("newPickupRequest", onNewPickup);
+      socket.disconnect();
+    };
+  }, [user, playPickupNotificationSound]);
 
   async function checkAuth() {
     try {
@@ -91,6 +160,7 @@ export default function AdminLayout() {
       "Drivers": "/admin/drivers",
       "Dustbins": "/admin/dustbins",
       "Pickup Requests": "/admin/pickup-requests",
+      "Reports Dashboard": "/admin/reports",
       "Users": "/admin/users",
     };
     
@@ -110,6 +180,27 @@ export default function AdminLayout() {
 
   return (
     <div className="d-flex" style={{ minHeight: "100vh" }}>
+      {pickupToast.show && (
+        <div
+          className="position-fixed top-0 end-0 p-3"
+          style={{ zIndex: 2000, maxWidth: "min(100%, 380px)" }}
+        >
+          <div className="toast show shadow" role="alert">
+            <div className="toast-header bg-primary text-white">
+              <i className="bi bi-bell-fill me-2"></i>
+              <strong className="me-auto">Pickup alert</strong>
+              <button
+                type="button"
+                className="btn-close btn-close-white"
+                aria-label="Close"
+                onClick={() => setPickupToast((prev) => ({ ...prev, show: false }))}
+              />
+            </div>
+            <div className="toast-body">{pickupToast.message}</div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar */}
       <div 
         className={`bg-dark text-white ${sidebarOpen ? "d-block" : "d-none d-md-block"}`}
@@ -145,6 +236,14 @@ export default function AdminLayout() {
               Map View
             </Link>
             
+            <Link 
+              to="/admin/reports" 
+              className={`nav-link text-white ${isActive("/admin/reports") ? "bg-secondary bg-opacity-50 rounded" : ""}`}
+            >
+              <i className="bi bi-bar-chart-line me-2"></i>
+              Reports Dashboard
+            </Link>
+            
             <hr className="text-white-50 my-2" />
             
             {/* Menu Sections */}
@@ -168,20 +267,27 @@ export default function AdminLayout() {
                         "Drivers": "/admin/drivers",
                         "Dustbins": "/admin/dustbins",
                         "Pickup Requests": "/admin/pickup-requests",
+                        "Reports Dashboard": "/admin/reports",
                         "Users": "/admin/users",
                       };
                       const route = routeMap[entity.name];
                       const isEntityActive = route && isActive(route);
                       
+                      const isPickupRequests = entity.name === "Pickup Requests";
                       return (
                         <Link
                           key={entityIndex}
                           to={route || "#"}
-                          className={`nav-link text-white-50 small ${isEntityActive ? "bg-secondary bg-opacity-50 rounded" : ""}`}
+                          className={`nav-link text-white-50 small ${
+                            isEntityActive ? "bg-secondary bg-opacity-50 rounded" : ""
+                          } ${highlightPickupNav && isPickupRequests ? "border border-warning border-2 rounded shadow-sm" : ""}`}
                           onClick={() => route && navigate(route)}
                         >
                           <i className="bi bi-arrow-right-circle me-2"></i>
                           {entity.name}
+                          {isPickupRequests && pickupBadgeCount > 0 && (
+                            <span className="badge bg-danger rounded-pill ms-1">{pickupBadgeCount}</span>
+                          )}
                         </Link>
                       );
                     })}

@@ -10,6 +10,8 @@ const dustbinRouter = require("./routers/dustbin.router.js");
 const areaRouter = require("./routers/area.router.js");
 const driverRouter = require("./routers/driver.router.js");
 const pickupRequestRouter = require("./routers/pickupRequest.router.js");
+const reportsRouter = require("./routers/reports.router.js");
+const predictionRouter = require("./routers/prediction.router.js");
 const fileRouter = require("./routers/file.router.js");
 const specialRouter = require("./routers/special.router.js");
 const logger = require("./logger");
@@ -33,6 +35,8 @@ app.use("/api/dustbins", dustbinRouter); // authentication done inside this file
 app.use("/api/areas", areaRouter); // authentication done inside this file
 app.use("/api/drivers", driverRouter); // authentication done inside this file
 app.use("/api/pickupRequests", pickupRequestRouter); // authentication done inside this file
+app.use("/api/reports", reportsRouter);
+app.use("/api/predictions", predictionRouter);
 app.use("/api/files", fileRouter);
 app.use("/api/uploadedImages", express.static(path.join(__dirname, "..", "uploads")));
 app.use(errorLogger); // This should be the last middleware.

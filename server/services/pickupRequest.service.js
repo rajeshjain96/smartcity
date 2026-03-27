@@ -92,6 +92,39 @@ async function enrichPickupRequests(req, list) {
   });
 }
 
+/** Emit only to the resident (users collection id) who owns this pickup. */
+async function emitPickupStatusUpdatedToResident(req, pickupRequestIdStr) {
+  const io = req.app.get("io");
+  if (!io) return;
+  const enriched = await getPickupRequestById(req, pickupRequestIdStr);
+  if (!enriched || !enriched.userId) return;
+  const st = enriched.status;
+  if (st !== "InProgress" && st !== "Collected") return;
+  const residentUserId = enriched.userId.toString
+    ? enriched.userId.toString()
+    : String(enriched.userId);
+  if (!/^[a-f0-9]{24}$/i.test(residentUserId)) return;
+  io.to(`resident:${residentUserId}`).emit("pickupStatusUpdated", {
+    requestId: enriched._id.toString(),
+    status: enriched.status,
+    dustbinName: enriched.dustbinName || "N/A",
+  });
+}
+
+/** Emit only to the socket room for this driver document _id (matches assignedDriverId on pickups). */
+async function emitPickupAssignedToDriver(req, pickupRequestIdStr) {
+  const io = req.app.get("io");
+  if (!io) return;
+  const enriched = await getPickupRequestById(req, pickupRequestIdStr);
+  if (!enriched || !enriched.assignedDriverId) return;
+  const driverRoomId = enriched.assignedDriverId.toString();
+  io.to(`driver:${driverRoomId}`).emit("pickupAssignedToDriver", {
+    requestId: enriched._id.toString(),
+    areaName: enriched.areaName || "N/A",
+    dustbinName: enriched.dustbinName || "N/A",
+  });
+}
+
 async function getAllPickupRequests(req) {
   const client = req.app.locals.mongoClient;
   const db = client.db(process.env.DB_NAME);
@@ -170,6 +203,20 @@ async function addPickupRequest(req, obj) {
       console.log("Invalid areaId format:", obj.areaId);
     }
   }
+
+  let driverAutoAssigned = false;
+
+  // Residents: assign driver from dustbin only (no client-chosen driver); admins keep body as-is
+  if (req.tokenData && req.tokenData.role === "resident" && obj.dustbinId) {
+    delete obj.assignedDriverId;
+    const dustbinCollection = db.collection("dustbins");
+    const dustbin = await dustbinCollection.findOne({ _id: obj.dustbinId });
+    if (dustbin && dustbin.assignedDriverId) {
+      obj.assignedDriverId = dustbin.assignedDriverId;
+      obj.status = "Assigned";
+      driverAutoAssigned = true;
+    }
+  }
   
   // Convert assignedDriverId to ObjectId if provided
   if (obj.assignedDriverId && typeof obj.assignedDriverId === 'string' && obj.assignedDriverId.length === 24) {
@@ -190,6 +237,17 @@ async function addPickupRequest(req, obj) {
   
   let result = await collection.insertOne(obj);
   obj._id = result.insertedId;
+  if (driverAutoAssigned) {
+    obj.driverAutoAssigned = true;
+    obj.assignmentMessage = "Driver automatically assigned";
+  }
+
+  if (obj.assignedDriverId) {
+    emitPickupAssignedToDriver(req, obj._id.toString()).catch((err) =>
+      console.error("emitPickupAssignedToDriver (add):", err)
+    );
+  }
+
   return obj;
 }
 
@@ -198,6 +256,9 @@ async function updatePickupRequest(req, obj) {
   const db = client.db(process.env.DB_NAME);
   const collection = db.collection("pickupRequests");
   let id = obj._id;
+  const existingBefore = await collection.findOne({
+    _id: ObjectId.createFromHexString(id),
+  });
   delete obj._id;
   
   // Convert dustbinId to ObjectId if provided
@@ -239,6 +300,36 @@ async function updatePickupRequest(req, obj) {
     { _id: ObjectId.createFromHexString(id) },
     { $set: obj }
   );
+
+  if (result.matchedCount === 1) {
+    const after = await collection.findOne({
+      _id: ObjectId.createFromHexString(id),
+    });
+    const beforeDriver = existingBefore?.assignedDriverId
+      ? existingBefore.assignedDriverId.toString()
+      : null;
+    const afterDriver = after?.assignedDriverId
+      ? after.assignedDriverId.toString()
+      : null;
+    if (afterDriver && afterDriver !== beforeDriver) {
+      emitPickupAssignedToDriver(req, id).catch((err) =>
+        console.error("emitPickupAssignedToDriver (update):", err)
+      );
+    }
+
+    const beforeStatus = existingBefore?.status;
+    const afterStatus = after?.status;
+    if (
+      afterStatus &&
+      (afterStatus === "InProgress" || afterStatus === "Collected") &&
+      beforeStatus !== afterStatus
+    ) {
+      emitPickupStatusUpdatedToResident(req, id).catch((err) =>
+        console.error("emitPickupStatusUpdatedToResident (update):", err)
+      );
+    }
+  }
+
   return result;
 }
 

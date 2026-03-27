@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
+import { io } from "socket.io-client";
 import axios from "./AxiosInstance";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -9,6 +10,7 @@ export default function ResidentLayout() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [statusToast, setStatusToast] = useState({ show: false, message: "" });
   
   // Determine active menu item
   const isActive = (path) => {
@@ -18,6 +20,53 @@ export default function ResidentLayout() {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  const toastMessageForStatus = useCallback((status) => {
+    if (status === "InProgress") return "Your pickup is in progress";
+    if (status === "Collected") return "Your garbage has been collected";
+    return "Pickup status updated";
+  }, []);
+
+  useEffect(() => {
+    if (!statusToast.show) return;
+    const t = setTimeout(() => {
+      setStatusToast((prev) => ({ ...prev, show: false }));
+    }, 5500);
+    return () => clearTimeout(t);
+  }, [statusToast.show]);
+
+  useEffect(() => {
+    if (!user?.userId) return;
+    const base = import.meta.env.VITE_API_URL;
+    if (!base) return;
+
+    const socket = io(base, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+    });
+
+    const onConnect = () => {
+      socket.emit("joinResidentRoom", user.userId);
+    };
+
+    const onStatusUpdate = (payload) => {
+      const st = payload?.status;
+      setStatusToast({
+        show: true,
+        message: toastMessageForStatus(st),
+      });
+      window.dispatchEvent(new CustomEvent("residentPickupRefresh"));
+    };
+
+    socket.on("connect", onConnect);
+    socket.on("pickupStatusUpdated", onStatusUpdate);
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("pickupStatusUpdated", onStatusUpdate);
+      socket.disconnect();
+    };
+  }, [user, toastMessageForStatus]);
 
   async function checkAuth() {
     try {
@@ -56,6 +105,27 @@ export default function ResidentLayout() {
 
   return (
     <div className="d-flex" style={{ minHeight: "100vh" }}>
+      {statusToast.show && (
+        <div
+          className="position-fixed top-0 end-0 p-3"
+          style={{ zIndex: 2000, maxWidth: "min(100%, 380px)" }}
+        >
+          <div className="toast show shadow" role="alert">
+            <div className="toast-header bg-info text-dark">
+              <i className="bi bi-info-circle-fill me-2"></i>
+              <strong className="me-auto">Pickup update</strong>
+              <button
+                type="button"
+                className="btn-close"
+                aria-label="Close"
+                onClick={() => setStatusToast((prev) => ({ ...prev, show: false }))}
+              />
+            </div>
+            <div className="toast-body">{statusToast.message}</div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar */}
       <div 
         className={`bg-dark text-white ${sidebarOpen ? "d-block" : "d-none d-md-block"}`}
