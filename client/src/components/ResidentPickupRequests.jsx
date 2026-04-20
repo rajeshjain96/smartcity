@@ -13,6 +13,12 @@ export default function ResidentPickupRequests(props) {
   const [message, setMessage] = useState("");
   const { user } = props;
 
+  function getApiOrigin() {
+    const base = axios?.defaults?.baseURL ? String(axios.defaults.baseURL) : "";
+    // expected: http://localhost:3005/api
+    return base.endsWith("/api") ? base.slice(0, -4) : base;
+  }
+
   useEffect(() => {
     getData();
     getDustbins();
@@ -56,20 +62,29 @@ export default function ResidentPickupRequests(props) {
     }
   }
 
-  async function handleFormSubmit(request) {
+  async function handleFormSubmit(request, imageFile) {
     setFlagLoad(true);
     try {
       // Remove address from request if it exists (backend will derive from dustbin)
       const requestToSend = { ...request };
       delete requestToSend.address;
-      
-      let response = await axios.post("/pickupRequests", requestToSend);
-      let addedRequest = await response.data;
-      
+
+      const formData = new FormData();
+      Object.entries(requestToSend).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) formData.append(k, v);
+      });
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
+      let response = await axios.post("/pickupRequests", formData, {
+        headers: { "Content-type": "multipart/form-data" }
+      });
+
       showMessage("Pickup request submitted successfully!");
-      let newList = [addedRequest, ...requestList];
-      setRequestList(newList);
       setAction("list");
+      // Re-fetch so we always show latest detectedLevel / retry results
+      await getDataRef.current();
     } catch (error) {
       console.log(error);
       if (error.response && error.response.status === 401) {
@@ -203,6 +218,36 @@ export default function ResidentPickupRequests(props) {
                         <p className="card-text small mb-2">
                           <i className="bi bi-sticky me-1"></i>
                           {request.notes}
+                        </p>
+                      )}
+
+                      {request.requestImage && (
+                        <div className="mb-2">
+                          <img
+                            src={getApiOrigin() + "/api/uploadedImages/" + request.requestImage}
+                            alt="Uploaded dustbin"
+                            style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 8 }}
+                            onError={(e) => {
+                              // hide broken image icon
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {request.detectedLevel && (
+                        <p className="card-text small mb-2">
+                          <strong>Detected Level:</strong> {request.detectedLevel}
+                        </p>
+                      )}
+                      {!request.detectedLevel && request.requestImage && (
+                        <p className="card-text small text-muted mb-2">
+                          <strong>Detected Level:</strong> Unavailable
+                        </p>
+                      )}
+                      {request.detectionError && (
+                        <p className="card-text small text-muted mb-2">
+                          <strong>AI:</strong> {request.detectionError}
                         </p>
                       )}
                       

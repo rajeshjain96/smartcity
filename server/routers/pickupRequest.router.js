@@ -4,10 +4,20 @@ const PickupRequestService = require("../services/pickupRequest.service");
 const DriverService = require("../services/driver.service");
 const multer = require("multer");
 const { normalizeNewlines } = require("../utilities/lib");
+const { detectGarbageLevel } = require("../services/garbageLevelDetection.service");
+const path = require("path");
+const fs = require("fs");
+
+// Repo-root uploads folder (sibling of /server)
+// __dirname is .../server/routers → go up to .../server → .../ (repo root) → uploads
+const uploadDir = path.resolve(__dirname, "..", "..", "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "./uploads");
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + "-" + file.originalname);
@@ -150,6 +160,29 @@ router.post("/", upload.any(), async (req, res, next) => {
     if (req.tokenData && req.tokenData.name) {
       obj.addedBy = req.tokenData.name;
       obj.updatedBy = req.tokenData.name;
+    }
+
+    // Optional: handle image upload for AI detection
+    // Store filename so UI can display via /api/uploadedImages/<filename>
+    if (req.files && req.files.length > 0) {
+      const f = req.files[0];
+      obj.requestImage = f.filename;
+
+      const uploadedPath = path.join(uploadDir, f.filename);
+      try {
+        const detection = await detectGarbageLevel(uploadedPath);
+        if (detection && detection.status) {
+          obj.detectedLevel = detection.status;
+        } else {
+          obj.detectedLevel = null;
+          if (detection && detection.error) {
+            obj.detectionError = detection.error;
+          }
+        }
+      } catch (e) {
+        obj.detectedLevel = null;
+        obj.detectionError = e && e.message ? e.message : "AI detection failed";
+      }
     }
     
     obj = await PickupRequestService.addPickupRequest(req, obj);

@@ -1,5 +1,50 @@
 const { app } = require("../init.js");
 const { ObjectId } = require("mongodb");
+const path = require("path");
+const { detectGarbageLevel } = require("./garbageLevelDetection.service");
+
+const uploadDir = path.resolve(__dirname, "..", "..", "uploads");
+
+async function retryAiDetectionForList(req, list) {
+  if (!Array.isArray(list) || list.length === 0) return list;
+  const client = req.app.locals.mongoClient;
+  const db = client.db(process.env.DB_NAME);
+  const collection = db.collection("pickupRequests");
+
+  // Limit retries per request list fetch to avoid slowing responses
+  const candidates = list.filter(
+    (r) => r && r.requestImage && !r.detectedLevel
+  );
+  const toRetry = candidates.slice(0, 5);
+
+  await Promise.all(
+    toRetry.map(async (r) => {
+      try {
+        const imgPath = path.join(uploadDir, r.requestImage);
+        const detection = await detectGarbageLevel(imgPath);
+        if (detection && detection.status) {
+          await collection.updateOne(
+            { _id: r._id },
+            { $set: { detectedLevel: detection.status }, $unset: { detectionError: "" } }
+          );
+          r.detectedLevel = detection.status;
+          delete r.detectionError;
+        } else if (detection && detection.error) {
+          // Keep last error, but don't fail the request list
+          await collection.updateOne(
+            { _id: r._id },
+            { $set: { detectionError: detection.error } }
+          );
+          r.detectionError = detection.error;
+        }
+      } catch (e) {
+        // swallow
+      }
+    })
+  );
+
+  return list;
+}
 
 // Helper function to enrich pickup requests with area and dustbin names
 async function enrichPickupRequests(req, list) {
@@ -71,7 +116,7 @@ async function enrichPickupRequests(req, list) {
   });
   
   // Enrich each request
-  return list.map(request => {
+  list = list.map(request => {
     const enriched = { ...request };
     
     if (request.areaId) {
@@ -90,6 +135,11 @@ async function enrichPickupRequests(req, list) {
     
     return enriched;
   });
+
+  // Best-effort AI retry so existing requests update once Flask comes online
+  list = await retryAiDetectionForList(req, list);
+
+  return list;
 }
 
 /** Emit only to the resident (users collection id) who owns this pickup. */

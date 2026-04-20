@@ -13,6 +13,8 @@ export default function PickupRequestForm(props) {
     notes: "",
     status: "Pending"
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState("");
   const [errors, setErrors] = useState({});
   const { dustbinList } = props;
   
@@ -49,9 +51,28 @@ export default function PickupRequestForm(props) {
     if (!request.garbageType) {
       newErrors.garbageType = "Please select garbage type";
     }
+
+    if (imageFile) {
+      if (!imageFile.type || !imageFile.type.startsWith("image/")) {
+        newErrors.image = "Please select a valid image file";
+      }
+      // keep this lightweight; backend also validates
+      if (imageFile.size > 6 * 1024 * 1024) {
+        newErrors.image = "Image must be 6 MB or smaller";
+      }
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  }
+
+  function handleImageChange(e) {
+    const f = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+    setImageFile(f);
+    setImagePreviewUrl(f ? URL.createObjectURL(f) : "");
+    if (errors.image) {
+      setErrors({ ...errors, image: "" });
+    }
   }
 
   const handleFormSubmit = (e) => {
@@ -61,7 +82,7 @@ export default function PickupRequestForm(props) {
       return;
     }
     
-    props.onFormSubmit(request);
+    props.onFormSubmit(request, imageFile);
   };
 
   return (
@@ -180,6 +201,35 @@ export default function PickupRequestForm(props) {
                 onChange={handleTextFieldChange}
                 placeholder="Any special instructions or notes (optional)"
               />
+            </div>
+          </div>
+
+          {/* Dustbin Image (optional) */}
+          <div className="col-12 my-2">
+            <div className="text-bold my-1">
+              <label className="form-label fw-semibold">Upload Dustbin Image (optional)</label>
+            </div>
+            <div className="px-0">
+              <input
+                type="file"
+                className="form-control"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+              {errors.image && (
+                <div className="text-danger small mt-1">
+                  <i className="bi bi-exclamation-circle"></i> {errors.image}
+                </div>
+              )}
+              {imagePreviewUrl && (
+                <div className="mt-2">
+                  <img
+                    src={imagePreviewUrl}
+                    alt="Preview"
+                    style={{ maxWidth: "100%", maxHeight: 240, borderRadius: 8 }}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
